@@ -17,7 +17,7 @@ fn main() {
     chunk.push_chunk(Val::U8(constant3 as u8), 15);
     chunk.push_chunk(Val::OpCode(OpCode::OpReturn), 16);
     disassemble_chunk(&chunk, "test chunk".to_owned());
+    chunk.encode_lines();
     println!("{chunk:?}");
     chunk.free_chunk();
-    println!("free {chunk:?}");
 }

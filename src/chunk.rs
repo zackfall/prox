@@ -2,6 +2,7 @@ use std::fmt::Display;
 use std::rc::Rc;
 use std::slice::Iter;
 
+use crate::line_encoder::LineEncoder;
 use crate::memory::grow_array;
 use crate::value::{Value, ValueArray};
 
@@ -10,6 +11,7 @@ pub struct Chunk {
     code: Rc<Vec<Val>>,
     constants: ValueArray,
     lines: Vec<usize>,
+    line_encoder: LineEncoder,
 }
 
 impl Chunk {
@@ -18,22 +20,35 @@ impl Chunk {
         self.constants.len()
     }
 
-    pub fn get_value(&self, idx: usize) -> Val {
-        self.code[idx].clone()
+    pub fn encode_lines(&mut self) {
+        self.line_encoder.encode_lines(self.lines.clone())
+    }
+
+    pub fn decode_lines(&mut self) -> Vec<usize> {
+        self.line_encoder.decode_lines()
     }
 
     pub fn get_constants(&self) -> ValueArray {
         self.constants.clone()
     }
 
+    pub fn get_line(&self, idx: usize) -> usize {
+        self.line_encoder.get_line(idx).unwrap_or(0)
+    }
+
+    pub fn get_value(&self, idx: usize) -> Val {
+        self.code[idx].clone()
+    }
+
     pub fn free_chunk(&mut self) {
         self.constants.free_value();
         self.lines = Vec::new();
         self.code = Rc::new(Vec::with_capacity(8));
+        self.line_encoder = LineEncoder::new()
     }
 
     pub fn len(&self) -> usize {
-        self.code.len()
+        self.lines.len()
     }
 
     pub fn lines(&self) -> Vec<usize> {
@@ -49,6 +64,7 @@ impl Chunk {
             code: Rc::new(Vec::with_capacity(8)),
             constants: ValueArray::new(),
             lines: Vec::new(),
+            line_encoder: LineEncoder::new(),
         }
     }
 
@@ -63,7 +79,7 @@ impl Chunk {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub enum Val {
     U8(u8),
     OpCode(OpCode),
@@ -78,7 +94,7 @@ impl Display for Val {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub enum OpCode {
     OpConstant,
     OpReturn,
