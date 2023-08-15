@@ -1,4 +1,4 @@
-use crate::chunk::{Chunk, OpCode, Val};
+use crate::chunk::{Chunk, OpCode};
 
 /// This function get a constant from the chunk and then get a value
 /// from the values vector, i uses the index of the Constant
@@ -7,8 +7,7 @@ pub fn constant_instruction(name: String, chunk: &Chunk, offset: usize) -> usize
     let values = chunk.get_constants().get_values();
     // get the index of the constant
     let index = match constant.clone() {
-        Val::U8(num) => num - 1,
-        // This will never happen
+        OpCode::OpU8(n) => n,
         _ => 0,
     };
     let value = values[index as usize];
@@ -27,9 +26,11 @@ pub fn disassemble_chunk(chunk: &Chunk, name: String) {
 
 pub fn disassemble_instruction(chunk: &Chunk, offset: usize) -> usize {
     let instruction = chunk.get_value(offset);
-    match instruction.clone() {
-        Val::U8(_) => (),
-        Val::OpCode(_) => {
+    // print!("{offset:04} ");
+
+    match instruction {
+        OpCode::OpU8(_) => print!(""),
+        _ => {
             print!("{offset:04} ");
             if offset > 0 && chunk.lines()[offset] == chunk.lines()[offset - 1] {
                 print!("   | ");
@@ -39,19 +40,10 @@ pub fn disassemble_instruction(chunk: &Chunk, offset: usize) -> usize {
         }
     }
 
-    // let instruction = chunk.get_value(offset);
     match instruction {
-        Val::U8(_) => constant_instruction("OpConstant".to_owned(), chunk, offset - 1),
-        Val::OpCode(op_code) => match op_code {
-            // OpCode::OpConstant => constant_instruction("OpConstant".to_owned(), chunk, offset),
-            OpCode::OpReturn => simple_instruction("OpReturn".to_owned(), offset),
-            // i don't have fucking idea what this does
-            _ => 0,
-        },
-        _ => {
-            println!("Unkown OpCode {:?}", instruction);
-            offset + 1
-        }
+        OpCode::OpConstant(_) => constant_instruction("OpConstant".to_owned(), chunk, offset),
+        OpCode::OpReturn(_) => simple_instruction("OpReturn".to_owned(), offset),
+        OpCode::OpU8(n) => offset + n as usize,
     }
 }
 

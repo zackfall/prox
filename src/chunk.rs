@@ -8,7 +8,7 @@ use crate::value::{Value, ValueArray};
 
 #[derive(Debug, Clone)]
 pub struct Chunk {
-    code: Rc<Vec<Val>>,
+    code: Rc<Vec<OpCode>>,
     constants: ValueArray,
     lines: Vec<usize>,
     line_encoder: LineEncoder,
@@ -36,7 +36,7 @@ impl Chunk {
         self.line_encoder.get_line(idx).unwrap_or(0)
     }
 
-    pub fn get_value(&self, idx: usize) -> Val {
+    pub fn get_value(&self, idx: usize) -> OpCode {
         self.code[idx].clone()
     }
 
@@ -55,7 +55,7 @@ impl Chunk {
         self.lines.clone()
     }
 
-    pub fn iter(&self) -> Iter<Val> {
+    pub fn iter(&self) -> Iter<OpCode> {
         self.code.iter()
     }
 
@@ -68,7 +68,7 @@ impl Chunk {
         }
     }
 
-    pub fn push_chunk(&mut self, byte: Val, line: usize) {
+    pub fn push_chunk(&mut self, byte: OpCode, line: usize) {
         let m_code = Rc::make_mut(&mut self.code);
         m_code.push(byte);
         self.lines.push(line);
@@ -80,31 +80,18 @@ impl Chunk {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub enum Val {
-    U8(u8),
-    OpCode(OpCode),
-}
-
-impl Display for Val {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Val::U8(num) => write!(f, "{}", num - 1),
-            Val::OpCode(op_code) => write!(f, "{}", op_code),
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy)]
 pub enum OpCode {
-    OpConstant,
-    OpReturn,
+    OpConstant(u8),
+    OpU8(u8),
+    OpReturn(u8),
 }
 
 impl OpCode {
     pub fn get_index(&self) -> usize {
         match self {
-            OpCode::OpConstant => 1,
-            OpCode::OpReturn => 0,
+            OpCode::OpConstant(byte) => *byte as usize,
+            OpCode::OpU8(byte) => *byte as usize,
+            OpCode::OpReturn(byte) => *byte as usize,
         }
     }
 }
