@@ -12,7 +12,7 @@ pub fn constant_instruction(name: String, chunk: &Chunk, offset: usize) -> usize
         _ => 0,
     };
     let value = values[index as usize];
-    println!("{name:<-16} {constant:?} {value}");
+    println!("{name:<-16} {constant} '{value}'");
     offset + 2
 }
 
@@ -26,19 +26,29 @@ pub fn disassemble_chunk(chunk: &Chunk, name: String) {
 }
 
 pub fn disassemble_instruction(chunk: &Chunk, offset: usize) -> usize {
-    print!("{offset:04} ");
-
     let instruction = chunk.get_value(offset);
+    match instruction.clone() {
+        Val::U8(_) => (),
+        Val::OpCode(_) => {
+            print!("{offset:04} ");
+            if offset > 0 && chunk.lines()[offset] == chunk.lines()[offset - 1] {
+                print!("   | ");
+            } else {
+                print!("{:>4} ", chunk.lines()[offset]);
+            }
+        }
+    }
+
+    // let instruction = chunk.get_value(offset);
     match instruction {
+        Val::U8(_) => constant_instruction("OpConstant".to_owned(), chunk, offset - 1),
         Val::OpCode(op_code) => match op_code {
-            OpCode::OpConstant => constant_instruction("OpConstant".to_owned(), chunk, offset),
+            // OpCode::OpConstant => constant_instruction("OpConstant".to_owned(), chunk, offset),
             OpCode::OpReturn => simple_instruction("OpReturn".to_owned(), offset),
+            // i don't have fucking idea what this does
+            _ => 0,
         },
         _ => {
-            // if let Val::U8(val) = instruction {
-            //     println!("Unknown OpCode {val}");
-            // }
-            // offset + 1
             println!("Unkown OpCode {:?}", instruction);
             offset + 1
         }

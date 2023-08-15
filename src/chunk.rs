@@ -7,9 +7,9 @@ use crate::value::{Value, ValueArray};
 
 #[derive(Debug, Clone)]
 pub struct Chunk {
-    offset: usize,
     code: Rc<Vec<Val>>,
     constants: ValueArray,
+    lines: Vec<usize>,
 }
 
 impl Chunk {
@@ -28,11 +28,16 @@ impl Chunk {
 
     pub fn free_chunk(&mut self) {
         self.constants.free_value();
+        self.lines = Vec::new();
         self.code = Rc::new(Vec::with_capacity(8));
     }
 
     pub fn len(&self) -> usize {
         self.code.len()
+    }
+
+    pub fn lines(&self) -> Vec<usize> {
+        self.lines.clone()
     }
 
     pub fn iter(&self) -> Iter<Val> {
@@ -41,15 +46,16 @@ impl Chunk {
 
     pub fn new() -> Chunk {
         Chunk {
-            offset: 0,
             code: Rc::new(Vec::with_capacity(8)),
             constants: ValueArray::new(),
+            lines: Vec::new(),
         }
     }
 
-    pub fn push_chunk(&mut self, byte: Val) {
+    pub fn push_chunk(&mut self, byte: Val, line: usize) {
         let m_code = Rc::make_mut(&mut self.code);
         m_code.push(byte);
+        self.lines.push(line);
 
         if m_code.capacity() == m_code.len() {
             self.code = grow_array(m_code);
@@ -66,7 +72,7 @@ pub enum Val {
 impl Display for Val {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Val::U8(num) => write!(f, "{}", num),
+            Val::U8(num) => write!(f, "{}", num - 1),
             Val::OpCode(op_code) => write!(f, "{}", op_code),
         }
     }
@@ -92,19 +98,3 @@ impl Display for OpCode {
         write!(f, "{}", self.get_index())
     }
 }
-
-// pub trait Pushable {
-//     fn push_chunk(self, chunk: &mut Chunk);
-// }
-
-// impl Pushable for OpCode {
-//     fn push_chunk(self, chunk: &mut Chunk) {
-//         chunk.push_chunk(Val::OpCode(self))
-//     }
-// }
-
-// impl Pushable for u8 {
-//     fn push_chunk(self, chunk: &mut Chunk) {
-//         chunk.push_chunk(Val::U8(self))
-//     }
-// }
