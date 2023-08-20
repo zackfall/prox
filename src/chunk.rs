@@ -1,6 +1,4 @@
 use std::fmt::Display;
-use std::rc::Rc;
-use std::slice::Iter;
 
 use crate::line_encoder::LineEncoder;
 use crate::memory::grow_array;
@@ -8,7 +6,8 @@ use crate::value::{Value, ValueArray};
 
 #[derive(Debug, Clone)]
 pub struct Chunk {
-    code: Rc<Vec<OpCode>>,
+    code: Vec<u8>,
+    op_codes: Vec<OpCode>,
     constants: ValueArray,
     lines: Vec<usize>,
     line_encoder: LineEncoder,
@@ -36,14 +35,18 @@ impl Chunk {
         self.line_encoder.get_line(idx).unwrap_or(0)
     }
 
-    pub fn get_value(&self, idx: usize) -> OpCode {
-        self.code[idx].clone()
+    pub fn get_op_codes(&self, idx: usize) -> OpCode {
+        self.op_codes[idx]
+    }
+
+    pub fn get_value(&self, idx: usize) -> u8 {
+        self.code[idx]
     }
 
     pub fn free_chunk(&mut self) {
         self.constants.free_value();
         self.lines = Vec::new();
-        self.code = Rc::new(Vec::with_capacity(8));
+        self.code = Vec::with_capacity(8);
         self.line_encoder = LineEncoder::new()
     }
 
@@ -51,17 +54,18 @@ impl Chunk {
         self.lines.len()
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
     pub fn lines(&self) -> Vec<usize> {
         self.lines.clone()
     }
 
-    pub fn iter(&self) -> Iter<OpCode> {
-        self.code.iter()
-    }
-
     pub fn new() -> Chunk {
         Chunk {
-            code: Rc::new(Vec::with_capacity(8)),
+            code: Vec::with_capacity(8),
+            op_codes: Vec::new(),
             constants: ValueArray::new(),
             lines: Vec::new(),
             line_encoder: LineEncoder::new(),
@@ -69,13 +73,19 @@ impl Chunk {
     }
 
     pub fn push_chunk(&mut self, byte: OpCode, line: usize) {
-        let m_code = Rc::make_mut(&mut self.code);
-        m_code.push(byte);
+        self.op_codes.push(byte);
+        self.code.push(byte.as_u8());
         self.lines.push(line);
 
-        if m_code.capacity() == m_code.len() {
-            self.code = grow_array(m_code);
+        if self.code.capacity() == self.code.len() {
+            self.code = grow_array(self.code.clone());
         }
+    }
+}
+
+impl Default for Chunk {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -92,6 +102,14 @@ impl OpCode {
             OpCode::OpConstant(byte) => *byte as usize,
             OpCode::OpU8(byte) => *byte as usize,
             OpCode::OpReturn(byte) => *byte as usize,
+        }
+    }
+
+    fn as_u8(&self) -> u8 {
+        match self {
+            OpCode::OpConstant(byte) => *byte,
+            OpCode::OpU8(byte) => *byte,
+            OpCode::OpReturn(byte) => *byte,
         }
     }
 }

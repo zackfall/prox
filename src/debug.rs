@@ -5,27 +5,22 @@ use crate::chunk::{Chunk, OpCode};
 pub fn constant_instruction(name: String, chunk: &Chunk, offset: usize) -> usize {
     let constant = chunk.get_value(offset + 1);
     let values = chunk.get_constants().get_values();
-    // get the index of the constant
-    let index = match constant.clone() {
-        OpCode::OpU8(n) => n,
-        _ => 0,
-    };
-    let value = values[index as usize];
+    let value = values[constant as usize];
     println!("{name:<-16} {constant} '{value}'");
     offset + 2
 }
 
 pub fn disassemble_chunk(chunk: &Chunk, name: String) {
     println!("== {name} ==");
-    let mut offset = 0;
+    let mut _offset = 0;
 
     for idx in 0..chunk.len() {
-        offset = disassemble_instruction(chunk, idx);
+        _offset = disassemble_instruction(chunk, idx);
     }
 }
 
 pub fn disassemble_instruction(chunk: &Chunk, offset: usize) -> usize {
-    let instruction = chunk.get_value(offset);
+    let instruction = chunk.get_op_codes(offset);
     // print!("{offset:04} ");
 
     match instruction {
@@ -49,5 +44,5 @@ pub fn disassemble_instruction(chunk: &Chunk, offset: usize) -> usize {
 
 pub fn simple_instruction(name: String, offset: usize) -> usize {
     println!("{name}");
-    return offset + 1;
+    offset + 1
 }

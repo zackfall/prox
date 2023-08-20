@@ -1,39 +1,47 @@
-use std::rc::Rc;
-
 use crate::memory::grow_array;
 
 pub type Value = f64;
 
 #[derive(Debug, Clone)]
 pub struct ValueArray {
-    values: Rc<Vec<Value>>,
+    values: Vec<Value>,
 }
 
 impl ValueArray {
-    pub fn get_values(&mut self) -> Rc<Vec<Value>> {
+    pub fn get_values(&mut self) -> Vec<Value> {
         self.values.clone()
     }
 
     pub fn free_value(&mut self) {
-        self.values = Rc::new(Vec::with_capacity(8));
+        self.values = Vec::with_capacity(8);
     }
 
     pub fn len(&self) -> usize {
         self.values.len()
     }
 
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
     pub fn new() -> ValueArray {
         Self {
-            values: Rc::new(Vec::with_capacity(8)),
+            values: Vec::with_capacity(8),
         }
     }
 
     pub fn push_value(&mut self, value: Value) {
-        let mut values = Rc::make_mut(&mut self.values);
-        values.push(value);
+        self.values.push(value);
 
-        if values.capacity() == values.len() {
-            self.values = grow_array(&mut values);
+        if self.values.capacity() == self.values.len() {
+            self.values = grow_array(self.values.clone());
         }
+    }
+}
+
+impl Default for ValueArray {
+    fn default() -> Self {
+        Self::new()
     }
 }

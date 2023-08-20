@@ -65,3 +65,9 @@ impl LineEncoder {
         }
     }
 }
+
+impl Default for LineEncoder {
+    fn default() -> Self {
+        Self::new()
+    }
+}
