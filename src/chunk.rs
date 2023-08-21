@@ -6,8 +6,8 @@ use crate::value::{Value, ValueArray};
 
 #[derive(Debug, Clone)]
 pub struct Chunk {
-    code: Vec<u8>,
-    op_codes: Vec<OpCode>,
+    pub code: Vec<u8>,
+    pub op_codes: Vec<OpCode>,
     constants: ValueArray,
     lines: Vec<usize>,
     line_encoder: LineEncoder,
