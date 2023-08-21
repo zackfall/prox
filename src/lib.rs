@@ -7,3 +7,4 @@ pub mod value;
 pub mod vm;
 
 pub const DEBUG_TRACE_EXECUTION: bool = true;
+pub const STACK_MAX: usize = 256;
